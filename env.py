@@ -5,10 +5,10 @@ import numpy as np
 from gym import spaces
 from pathlib import Path
 from copy import deepcopy
-from environment.network import Network
-from environment.arrival import ArrivalProcess
+from network import Network
+from arrival import ArrivalProcess
 from tabulate import tabulate
-from environment.sfv import ServiceFunctionChain
+from sfv import ServiceFunctionChain
 
 
 class Env(gym.Env):
@@ -60,6 +60,7 @@ class Env(gym.Env):
         will not satisfy its constraints (e.g. TTL constraint).
         '''
         is_valid_sfc = self.vnf_backtrack.embed_vnf(sfc, vnf, action)
+
         logging.debug('VNF embedding of {} to `vnf_backtrack` network on node: {} was {}.'.format(
             self.vnf_idx, action, is_valid_sfc))
 
@@ -216,15 +217,15 @@ class Env(gym.Env):
         resources = [[num, *[str(avail_res) + ' out of ' + str(max_res) for avail_res, max_res in zip(res[0].values(), res[1].values())]]
                      for num, res in enumerate(zip(self.vnf_backtrack.calculate_resources(), self.vnf_backtrack.calculate_resources(False)))]
 
-        sfcs = [[res.arrival_time, res.ttl, res.bandwidth_demand, res.max_response_latency, '\n'.join([str(vnf) for vnf in res.vnfs]), '\n'.join([str(node) for node in nodes])]
+        sfcs = [[res.arrival_time, res.ttl, res.max_response_latency, '\n'.join([str(vnf) for vnf in res.vnfs]), '\n'.join([str(node) for node in nodes])]
                 for res, nodes in self.vnf_backtrack.sfc_embedding.items()]
 
         rep = str(tabulate(resources, headers=[
-                  'Node', 'Cpu', 'Memory', 'Bandwidth'], tablefmt="presto"))
+                  'Node', 'Cpu', 'Bandwidth'], tablefmt="presto"))
         rep += '\n \n \n'
         rep += 'Currently active Service Function Chains in the network:\n \n'
-        rep += str(tabulate(sfcs, headers=['Arrival time', 'TTL', 'Bandwidth',
-                                           'Max latency', 'VNFs (CPU, Memory)', ' Embedding Nodes'], tablefmt="grid"))
+        rep += str(tabulate(sfcs, headers=['Arrival time', 'TTL',
+                                           'Max latency', 'VNFs (CPU, Bandwidth)', ' Embedding Nodes'], tablefmt="grid"))
         rep += '\n \n'
         rep += 'Last reward = '+str(self.reward)+'\n'
         rep += 'Current request batch for (network) timestep ' + str(
@@ -240,7 +241,7 @@ class Env(gym.Env):
         if (done == True):
             return np.asarray([])
 
-        # compute remaining resources of backtrack network, i.e. (cpu, memory, bandwidth) for each node
+        # compute remaining resources of backtrack network, i.e. (cpu, bandwidth) for each node
         network_resources = self.vnf_backtrack.calculate_resources(
             remaining=True)
         network_resources = np.asarray([list(node_res.values())
@@ -259,7 +260,7 @@ class Env(gym.Env):
         sfc = self.request_batch[self.sfc_idx]
         vnf = sfc.vnfs[self.vnf_idx]
 
-        norm_vnf_resources = np.asarray([*vnf, sfc.bandwidth_demand])
+        norm_vnf_resources = np.asarray([*vnf])
         norm_vnf_resources = list(norm_vnf_resources / max_resources)
 
         # TODO: parameterize normalization of constants such as TTL?
@@ -284,7 +285,7 @@ class Env(gym.Env):
         if not (last_in_sfc and sfc_valid):
             reward = 0
         else:
-            reward = (sfc.ttl*sfc.bandwidth_demand) / 10
+            reward = sfc.ttl
 
         if batch_completed:
             # compute total operation costs of the network first from individual costs of each resource

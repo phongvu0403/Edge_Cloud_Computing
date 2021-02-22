@@ -3,17 +3,17 @@ import operator
 import networkx as nx
 from collections import Counter
 from networkx.exception import NetworkXNoPath
-from environment.sfv import ServiceFunctionChain
+from sfv import ServiceFunctionChain
 
 
 class Network:
-    def __init__(self, overlay, costs={'cpu': 0.2, 'memory': 0.2, 'bandwidth': 0.006}):
+    def __init__(self, overlay, costs={'cpu': 0.2, 'bandwidth': 0.006}):
         """Internal representation of the network & embedded VNFs.
 
         Args:
           overlay (str or networkx graph): Path to an overlay graph that specifies the network's properties
                 or a valid networkx graph.
-          costs (tuple of float): The cost for one unit of cpu, memory and bandwidth"""
+          costs (tuple of float): The cost for one unit of cpu and bandwidth"""
 
         # parse and validate the overlay network
         self.overlay, properties = Network.check_overlay(overlay)
@@ -46,10 +46,38 @@ class Network:
         if node >= self.num_nodes or not self.check_vnf_resources(vnf, sfc, node):
             return False
 
-        if sfc not in self.sfc_embedding:
-            self.sfc_embedding[sfc] = []
+        if vnf == sfc.vnfs[0] and node not in range(376, 676):
+            return False
 
-        self.sfc_embedding[sfc].append(node)
+        if vnf == sfc.vnfs[3] and node not in range(0, 250):
+            return False
+
+        if vnf == sfc.vnfs[1] and node in range(250, 376):
+            return False
+
+        if vnf == sfc.vnfs[2] and node in range(250, 376):
+            return False
+
+        if sfc not in self.sfc_embedding:
+            self.sfc_embedding[sfc] = [0, 0, 0, 0]
+
+        if vnf == sfc.vnfs[0]:
+            self.sfc_embedding[sfc][0] = node
+
+        elif vnf == sfc.vnfs[1]:
+            if node in range(376, 676):
+                self.sfc_embedding[sfc][1] = self.sfc_embedding[sfc][0]
+            else:
+                self.sfc_embedding[sfc][1] = node
+
+        elif vnf == sfc.vnfs[2]:
+            if node in range(376, 676):
+                self.sfc_embedding[sfc][2] = self.sfc_embedding[sfc][0]
+            else:
+                self.sfc_embedding[sfc][2] = node
+
+        else:
+            self.sfc_embedding[sfc][3] = node
 
         return True
 
@@ -67,16 +95,15 @@ class Network:
             for sfc, nodes in self.sfc_embedding.items():
                 for vnf_idx, node_idx in enumerate(nodes):
                     resources[node_idx]['cpu'] -= sfc.vnfs[vnf_idx][0]
-                    resources[node_idx]['memory'] -= sfc.vnfs[vnf_idx][1]
 
                     # bandwidth is demanded if successive VNFs are embedded on different servers, i.e.
                     # no bandwidth is required if the VNF is placed on the same server as the previous VNF,
                     # unless for the last VNF of the chain, for whom we always demand bandwidth
                     if vnf_idx == len(nodes) - 1:
-                        resources[node_idx]['bandwidth'] -= sfc.bandwidth_demand
+                        resources[node_idx]['bandwidth'] -= 0
 
                     elif not nodes[vnf_idx] == nodes[vnf_idx+1]:
-                        resources[node_idx]['bandwidth'] -= sfc.bandwidth_demand
+                        resources[node_idx]['bandwidth'] -= sfc.vnfs[vnf_idx][1]
 
         return resources
 
@@ -86,26 +113,26 @@ class Network:
         """
 
         # check if there exists a node which can cover the request's bandwidth demand
-        resources = self.calculate_resources()
-        max_available_bandwidth = max([res['bandwidth'] for res in resources])
-        bandwidth_constraint = sfc.bandwidth_demand <= max_available_bandwidth
-
-        # check if the current bandwidth constrains hold
-        if not all([node['bandwidth'] >= 0 for node in resources]):
-            return False
-
-        # distinguish whether SFC is already (partially) embedded or a novel request
-        if not sfc in self.sfc_embedding:
-            # solely verify bandwidth constraint for novel requests
-            return bandwidth_constraint
-
-        # if there is a next VNF and it can be embedded to the same node as the previous VNF,
-        # no additional bandwidth is demanded
-        elif not bandwidth_constraint and len(self.sfc_embedding[sfc]) < len(sfc.vnfs):
-            last_node = self.sfc_embedding[sfc][-1]
-            next_vnf = sfc.vnfs[len(self.sfc_embedding[sfc])]
-            bandwidth_constraint = self.check_vnf_resources(
-                next_vnf, sfc, last_node)
+        # resources = self.calculate_resources()
+        # max_available_bandwidth = max([res['bandwidth'] for res in resources])
+        # bandwidth_constraint = sfc.bandwidth_demand <= max_available_bandwidth
+        #
+        # # check if the current bandwidth constrains hold
+        # if not all([node['bandwidth'] >= 0 for node in resources]):
+        #     return False
+        #
+        # # distinguish whether SFC is already (partially) embedded or a novel request
+        # if not sfc in self.sfc_embedding:
+        #     # solely verify bandwidth constraint for novel requests
+        #     return bandwidth_constraint
+        #
+        # # if there is a next VNF and it can be embedded to the same node as the previous VNF,
+        # # no additional bandwidth is demanded
+        # elif not bandwidth_constraint and len(self.sfc_embedding[sfc]) < len(sfc.vnfs):
+        #     last_node = self.sfc_embedding[sfc][-1]
+        #     next_vnf = sfc.vnfs[len(self.sfc_embedding[sfc])]
+        #     bandwidth_constraint = self.check_vnf_resources(
+        #         next_vnf, sfc, last_node)
 
         # also verify the latency constraints for a (partially) embedded SFC, i.e.
         # does the latency of prior VNF embeddings violate the maximum latency of the request?
@@ -115,7 +142,7 @@ class Network:
         except NetworkXNoPath:
             latency_constraint = False
 
-        return bandwidth_constraint and latency_constraint
+        return latency_constraint
 
     def calculate_current_latency(self, sfc):
         """Calculates the current latency of the SFC i.e the end to end delay from the start of the SFC to the currently
@@ -128,9 +155,9 @@ class Network:
         # compute transmission and processing delay if the SFC is already (partially) embedded
         if sfc in self.sfc_embedding:
             nodes = self.sfc_embedding[sfc]
-            latency = sum([nx.dijkstra_path_length(self.overlay, nodes[idx-1],
-                                                   nodes[idx], weight='latency') for idx in range(1, len(nodes))])
-
+            # latency = sum([nx.dijkstra_path_length(self.overlay, nodes[idx-1],
+            #                                        nodes[idx], weight='latency') for idx in range(1, len(nodes))])
+            latency = 0
             latency += sum(sfc.processing_delays[:len(nodes)])
 
         return latency
@@ -163,7 +190,7 @@ class Network:
             resources = [resources[node]]
 
         def constraints(res, vnf): return all(
-            [res['cpu'] >= vnf[0], res['memory'] >= vnf[1]])
+            [res['cpu'] >= vnf[0], res['bandwidth'] >= vnf[1]])
         nodes = set(num for num, res in enumerate(
             resources) if constraints(res, vnf))
 
@@ -244,7 +271,7 @@ class Network:
         if isinstance(overlay, str) and overlay.endswith('.gpickle'):
             overlay = nx.read_gpickle(overlay)
 
-        node_attributes = {'cpu': int, 'memory': float, 'bandwidth': float}
+        node_attributes = {'cpu': int, 'bandwidth': float}
         for _, data in overlay.nodes(data=True):
             assert(all([nattr in data for nattr, ntype in node_attributes.items(
             )])), 'Overlay must specify all required node attributes.'

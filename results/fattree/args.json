@@ -1,0 +1,2 @@
+{"total_train_timesteps": 5000, "debug": true, "overlay": "./data/fatTree.gpickle", "requests": "./results/abilene/dynamic/default/requests.json", "agent": "PPO", "logs": "./results/fattree/", "eval_episodes": 20, "trials": 10, "output": "./results/fattree/"}
+{"total_train_timesteps": 5000, "debug": true, "overlay": "./data/abilene.gpickle", "requests": "./results/abilene/dynamic/default/requests.json", "agent": "PPO", "logs": "./results/fattree/", "eval_episodes": 20, "trials": 10, "output": "./results/fattree/"}

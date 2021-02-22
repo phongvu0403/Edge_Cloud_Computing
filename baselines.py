@@ -148,7 +148,7 @@ class FirstFitPolicy(BaselinePolicy):
         current_vnf = current_sfc.vnfs[self.env.vnf_idx]
 
         for node in range(self.env.vnf_backtrack.num_nodes):
-            if self.env.vnf_backtrack.check_vnf_resources(current_vnf, current_sfc.bandwidth_demand, node):
+            if self.env.vnf_backtrack.check_vnf_resources(current_vnf, current_sfc, node):
                 return th.scalar_tensor(node, dtype=th.int16)
 
         return self.env.vnf_backtrack.num_nodes
@@ -161,9 +161,9 @@ class FirstFitPolicy2(FirstFitPolicy):
     def _predict(self, state, factor=1, **kwargs):
         current_sfc = self.env.request_batch[self.env.sfc_idx]
         current_vnf = current_sfc.vnfs[self.env.vnf_idx]
-        positive_reward = current_sfc.bandwidth_demand
+        positive_reward = current_sfc.ttl
         costs = self.env.vnf_backtrack.costs
-        negative_reward = sum([vnf[0]*costs['cpu']+vnf[1]*costs['memory']
+        negative_reward = sum([vnf[0]*costs['cpu']+vnf[1]*costs['bandwidth']
                                for vnf in current_sfc.vnfs])
 
         if positive_reward < factor*negative_reward:
@@ -195,12 +195,12 @@ class FirstFitPolicy3(BaselinePolicy):
             path_length.items(), key=lambda item: item[1])]
 
         for node in sorted_nodes:
-            if self.env.vnf_backtrack.check_vnf_resources(current_vnf, current_sfc.bandwidth_demand, node):
+            if self.env.vnf_backtrack.check_vnf_resources(current_vnf, current_sfc, node):
                 if not node == last_node:
                     # check if the bandwidth constraint holds
                     remaining_bandwidth = self.env.vnf_backtrack.calculate_resources()[
                         node]['bandwidth']
-                    if remaining_bandwidth - current_sfc.bandwidth_demand < 0:
+                    if remaining_bandwidth - current_vnf[1] < 0:
                         continue
                 return th.scalar_tensor(node, dtype=th.int16)
 
@@ -213,9 +213,9 @@ class FirstFitPolicy4(FirstFitPolicy3):
 
     def _predict(self, state, factor=1, **kwargs):
         current_sfc = self.env.request_batch[self.env.sfc_idx]
-        positive_reward = current_sfc.bandwidth_demand
+        positive_reward = current_sfc.ttl
         costs = self.env.vnf_backtrack.costs
-        negative_reward = sum([vnf[0]*costs['cpu']+vnf[1]*costs['memory']
+        negative_reward = sum([vnf[0]*costs['cpu']+vnf[1]*costs['bandwidth']
                                for vnf in current_sfc.vnfs])
 
         if positive_reward < factor*negative_reward:

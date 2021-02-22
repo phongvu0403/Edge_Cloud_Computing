@@ -6,11 +6,11 @@ import json
 from pathlib import Path
 from copy import deepcopy
 from evaluation import evaluate_final_policy, safe_experiment
-from nfvdeep.environment.env import Env
-from nfvdeep.environment.arrival import *
-from nfvdeep.agent.baselines import *
-from nfvdeep.agent.logging import MetricLoggingCallback, NFVDeepMonitor
-from nfvdeep.tuning import OptimizationCallback
+from env import Env
+from arrival import *
+from baselines import *
+from log import MetricLoggingCallback, NFVDeepMonitor
+from tuning import OptimizationCallback
 from ax.service.ax_client import AxClient
 from ray.tune.suggest.ax import AxSearch
 from ray.tune.schedulers import ASHAScheduler

@@ -7,11 +7,11 @@ from pathlib import Path
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3 import A2C, PPO, DQN
 from evaluation import evaluate_final_policy, safe_experiment
-from nfvdeep.environment.arrival import StochasticProcess
-from nfvdeep.environment.env import Env
-from nfvdeep.environment.arrival import *
-from nfvdeep.agent.baselines import *
-from nfvdeep.agent.logging import MetricLoggingCallback, NFVDeepMonitor
+from arrival import StochasticProcess
+from env import Env
+from arrival import *
+from baselines import *
+from log import MetricLoggingCallback, NFVDeepMonitor
 
 
 if __name__ == '__main__':

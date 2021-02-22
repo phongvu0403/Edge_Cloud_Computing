@@ -1,5 +1,5 @@
 class ServiceFunctionChain:
-    def __init__(self, arrival_time, ttl, bandwidth_demand, max_response_latency, vnfs, processing_delays=None):
+    def __init__(self, arrival_time, ttl, max_response_latency, vnfs, processing_delays=None):
         '''Creating a new service function chain
 
         Args:
@@ -12,7 +12,7 @@ class ServiceFunctionChain:
 
         self.arrival_time = arrival_time
         self.ttl = ttl
-        self.bandwidth_demand = bandwidth_demand
+        # self.bandwidth_demand = bandwidth_demand
         self.max_response_latency = max_response_latency
         self.vnfs = vnfs
         self.num_vnfs = len(self.vnfs)

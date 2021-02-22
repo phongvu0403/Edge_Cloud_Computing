@@ -5,7 +5,7 @@ import random
 import numpy as np
 from abc import abstractmethod
 from collections.abc import Generator
-from environment.sfv import ServiceFunctionChain
+from sfv import ServiceFunctionChain
 
 
 class ArrivalProcess(Generator):
@@ -123,7 +123,7 @@ class StochasticProcess(ArrivalProcess):
 
 
 class PoissonArrivalUniformLoad(StochasticProcess):
-    def __init__(self, num_timeslots, num_requests, service_rate, num_vnfs, sfc_length, bandwidth, max_response_latency, cpus, memory, vnf_delays, seed=None, **kwargs):
+    def __init__(self, num_timeslots, num_requests, service_rate, num_vnfs, sfc_length, bandwidth, max_response_latency, cpus, vnf_delays, seed=None, **kwargs):
         if not seed is None:
             random.seed(seed)
 
@@ -137,7 +137,7 @@ class PoissonArrivalUniformLoad(StochasticProcess):
 
         # generate SFC & VNF parameters uniformly at random within their bounds
         load_generator = UniformLoadGenerator(
-            sfc_length, num_vnfs, max_response_latency, bandwidth, cpus, memory, vnf_delays)
+            sfc_length, num_vnfs, max_response_latency, bandwidth, cpus, vnf_delays)
 
         super().__init__(self.num_requests, load_generator)
 
@@ -159,22 +159,22 @@ class PoissonArrivalUniformLoad(StochasticProcess):
 
 
 class UniformLoadGenerator:
-    def __init__(self, sfc_length, num_vnfs, max_response_latency, bandwidth, cpus, memory, vnf_delays):
+    def __init__(self, sfc_length, num_vnfs, max_response_latency, bandwidth, cpus, vnf_delays):
         # SFC object generation parameters
         self.sfc_length = sfc_length
         self.num_vnfs = num_vnfs
-        self.bandwidth = bandwidth
         self.max_response_latency = max_response_latency
 
         # VNF object generation parameters
         self.cpus = cpus
-        self.memory = memory
+        self.bandwidth = bandwidth
         self.vnf_delays = vnf_delays
 
     def next_sfc_load(self):
         # generate requests demands for `num_vnfs` distinct types of VNFs
-        vnf_types = [(random.randint(*self.cpus), random.uniform(*self.memory))
-                     for _ in range(self.num_vnfs)]
+        # vnf_types = [(random.randint(*self.cpus), random.uniform(*self.memory))
+        #              for _ in range(self.num_vnfs)]
+        vnf_types = [(8, 8), (3, 6), (4, 14), (6, 8)]
         delays = [random.uniform(
             *self.vnf_delays) for _ in range(self.num_vnfs)]
 
@@ -183,15 +183,15 @@ class UniformLoadGenerator:
             sfc_params = {}
 
             # randomly choose VNFs that compose the SFC
-            num_sfc_vnfs = random.randint(*self.sfc_length)
-            vnfs_idx = [random.randint(0, len(vnf_types) - 1)
-                        for _ in range(num_sfc_vnfs)]
+            # num_sfc_vnfs = random.randint(*self.sfc_length)
+            # vnfs_idx = [random.randint(0, len(vnf_types) - 1)
+            #             for _ in range(num_sfc_vnfs)]
+            vnfs_idx = [0, 1, 2, 3]
 
             # generate all VNFs comprised in the SFC
             sfc_params['vnfs'] = [vnf_types[idx] for idx in vnfs_idx]
             sfc_params['processing_delays'] = [delays[idx] for idx in vnfs_idx]
             sfc_params['max_response_latency'] = random.uniform(
                 *self.max_response_latency)
-            sfc_params['bandwidth_demand'] = random.uniform(*self.bandwidth)
 
             yield sfc_params

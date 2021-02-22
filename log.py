@@ -46,11 +46,9 @@ class NFVDeepMonitor(Monitor):
         self.num_rejected = 0
         self.episode_length = 1
         self.resource_costs = {'cpu_cost': 0,
-                               'memory_cost': 0,
                                'bandwidth_cost': 0}
 
         self.resource_utilization = {'cpu_utilization': 0,
-                                     'memory_utilization': 0,
                                      'bandwidth_utilization': 0}
 
         self.operating_servers = 0

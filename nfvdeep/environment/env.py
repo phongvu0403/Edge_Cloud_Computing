@@ -5,10 +5,11 @@ import numpy as np
 from gym import spaces
 from pathlib import Path
 from copy import deepcopy
-from environment.network import Network
-from environment.arrival import ArrivalProcess
+from nfvdeep.environment.network import Network
+from nfvdeep.environment.arrival import ArrivalProcess
 from tabulate import tabulate
-from environment.sfv import ServiceFunctionChain
+from nfvdeep.environment.sfv import ServiceFunctionChain
+import random
 
 
 class Env(gym.Env):
@@ -54,6 +55,17 @@ class Env(gym.Env):
         sfc = self.request_batch[self.sfc_idx]
         vnf = sfc.vnfs[self.vnf_idx]
 
+        if self.vnf_idx == 0:
+            if action not in range(376, 676):
+                action = random.randint(376, 675)
+
+        elif self.vnf_idx == 3:
+            if action not in range(0, 250):
+                action = random.randint(0, 249)
+
+        else:
+            if action in range(250, 376):
+                action = random.randint(376, 675)
         '''
         Embed the VNF to the network. An embedding is invalid if either the VNF embedding or there do
         not remain sufficient resources to embed further VNFs of the current SFC / the SFC 

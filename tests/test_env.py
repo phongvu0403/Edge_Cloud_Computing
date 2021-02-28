@@ -1,7 +1,7 @@
-from environment.network import Network
-from environment.sfv import ServiceFunctionChain
-from environment.env import Env
-from environment.arrival import ArrivalProcess
+from nfvdeep.environment.network import Network
+from nfvdeep.environment.sfv import ServiceFunctionChain
+from nfvdeep.environment.env import Env
+from nfvdeep.environment.arrival import ArrivalProcess
 import networkx as nx
 
 

@@ -182,8 +182,13 @@ class FirstFitPolicy3(BaselinePolicy):
         current_vnf = current_sfc.vnfs[self.env.vnf_idx]
 
         if self.env.vnf_idx == 0:
-            source = random.randint(0, self.env.vnf_backtrack.num_nodes-1)
+            # source = random.randint(0, self.env.vnf_backtrack.num_nodes-1)
+            source = random.randint(376, 675)
             last_node = None
+
+        elif self.env.vnf_idx == 3:
+            source = random.randint(0, 250)
+            last_node = source
 
         else:
             source = self.env.vnf_backtrack.sfc_embedding[current_sfc][self.env.vnf_idx-1]
@@ -193,8 +198,13 @@ class FirstFitPolicy3(BaselinePolicy):
             self.env.vnf_backtrack.overlay, source=source, weight='latency')
         sorted_nodes = [node for node, _ in sorted(
             path_length.items(), key=lambda item: item[1])]
-
+        sorted_nodes_allow = []
+        sorted_nodes_allow.append(sorted_nodes[0])
         for node in sorted_nodes:
+            if node in range(0, 250):
+                sorted_nodes_allow.append(node)
+
+        for node in sorted_nodes_allow:
             if self.env.vnf_backtrack.check_vnf_resources(current_vnf, current_sfc.bandwidth_demand, node):
                 if not node == last_node:
                     # check if the bandwidth constraint holds

@@ -3,7 +3,7 @@ import operator
 import networkx as nx
 from collections import Counter
 from networkx.exception import NetworkXNoPath
-from environment.sfv import ServiceFunctionChain
+from nfvdeep.environment.sfv import ServiceFunctionChain
 
 
 class Network:
@@ -73,9 +73,11 @@ class Network:
                     # no bandwidth is required if the VNF is placed on the same server as the previous VNF,
                     # unless for the last VNF of the chain, for whom we always demand bandwidth
                     if vnf_idx == len(nodes) - 1:
-                        resources[node_idx]['bandwidth'] -= sfc.bandwidth_demand
-
+                        # resources[node_idx]['bandwidth'] -= sfc.bandwidth_demand
+                        resources[node_idx]['bandwidth'] -= 0
                     elif not nodes[vnf_idx] == nodes[vnf_idx+1]:
+                        resources[node_idx]['bandwidth'] -= sfc.bandwidth_demand
+                    elif (vnf_idx > 0) and not nodes[vnf_idx] == nodes[vnf_idx-1]:
                         resources[node_idx]['bandwidth'] -= sfc.bandwidth_demand
 
         return resources

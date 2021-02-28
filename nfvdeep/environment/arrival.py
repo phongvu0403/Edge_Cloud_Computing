@@ -5,7 +5,7 @@ import random
 import numpy as np
 from abc import abstractmethod
 from collections.abc import Generator
-from environment.sfv import ServiceFunctionChain
+from nfvdeep.environment.sfv import ServiceFunctionChain
 
 
 class ArrivalProcess(Generator):
@@ -75,8 +75,8 @@ class ArrivalProcess(Generator):
 class JSONArrivalProcess(ArrivalProcess):
     def __init__(self, request_path):
         """Instantiate an arrival process that generates SFC requests at their respective arrival timeslot from a specified JSON file."""
-        assert(isinstance(request_path, str))
-        assert(request_path.endswith('.json'))
+        assert (isinstance(request_path, str))
+        assert (request_path.endswith('.json'))
         self.request_path = request_path
         super().__init__()
 
@@ -118,12 +118,12 @@ class StochasticProcess(ArrivalProcess):
                 arrival_time=arrival_time, ttl=ttl, **sfc_params)
             req.append(sfc)
 
-        
         return req
 
 
 class PoissonArrivalUniformLoad(StochasticProcess):
-    def __init__(self, num_timeslots, num_requests, service_rate, num_vnfs, sfc_length, bandwidth, max_response_latency, cpus, memory, vnf_delays, seed=None, **kwargs):
+    def __init__(self, num_timeslots, num_requests, service_rate, num_vnfs, sfc_length, bandwidth, max_response_latency,
+                 cpus, memory, vnf_delays, seed=None, **kwargs):
         if not seed is None:
             random.seed(seed)
 
@@ -184,8 +184,9 @@ class UniformLoadGenerator:
 
             # randomly choose VNFs that compose the SFC
             num_sfc_vnfs = random.randint(*self.sfc_length)
-            vnfs_idx = [random.randint(0, len(vnf_types) - 1)
-                        for _ in range(num_sfc_vnfs)]
+            # vnfs_idx = [random.randint(0, len(vnf_types) - 1)
+            #             for _ in range(num_sfc_vnfs)]
+            vnfs_idx = [0, 1, 2, 3]
 
             # generate all VNFs comprised in the SFC
             sfc_params['vnfs'] = [vnf_types[idx] for idx in vnfs_idx]
